@@ -1,10 +1,11 @@
-#include "param.h"
 #include "types.h"
-#include "memlayout.h"
-#include "elf.h"
 #include "riscv.h"
-#include "proc.h"
 #include "defs.h"
+#include "param.h"
+#include "spinlock.h"
+#include "proc.h"
+#include "elf.h"
+#include "memlayout.h"
 #include "fs.h"
 
 /*
@@ -184,14 +185,18 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
 uint64
 unmap_shared_pages(struct proc *p, uint64 addr, uint64 size)
 {
-  // update process size only if the address + size == p->sz
+
   uint64 npages;
+  int do_free;
 
-  // pagesize = 10
-  // size = 13 -> 20
+  size = PGROUNDUP(size);
+  npages = size / PGSIZE;
 
-  //
-  // uvmunmap(p->pagetable, addr, npages, do_free)
+  do_free = 1; // not sure if need to check something or not...
+
+  uvmunmap(p->pagetable, addr, npages, do_free);
+
+  return 0;
 }
 
 // Create PTEs for virtual addresses starting at va that refer to
@@ -243,7 +248,7 @@ void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     if (PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
 
-    do_free = do_free & (*pte & PTE_S) != 0;
+    do_free = do_free & ((*pte & PTE_S) != 0);
 
     if (do_free)
     {

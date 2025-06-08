@@ -103,8 +103,13 @@ sys_map_shared_pages(void)
   int size;
   argaddr(0, &src_va);
   argint(1, &size);
-  argint(2, dst_pid);
-  dst_proc = get_proc_by_pid(dst_pid);
+  argint(2, &dst_pid);
+
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    if ()
+  }
+
   if (src_va >= MAXVA || size <= 0 || dst_proc == 0 || dst_proc->pid == src_proc->pid)
   {
     return -1; // Invalid arguments
