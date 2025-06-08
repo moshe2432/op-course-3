@@ -191,7 +191,7 @@ unmap_shared_pages(struct proc *p, uint64 addr, uint64 size)
   // size = 13 -> 20
 
   //
-  uvmunmap(p->pagetable, addr, npages, do_free)
+  // uvmunmap(p->pagetable, addr, npages, do_free)
 }
 
 // Create PTEs for virtual addresses starting at va that refer to
@@ -244,7 +244,7 @@ void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not a leaf");
 
     do_free = do_free & (*pte & PTE_S) != 0;
-    
+
     if (do_free)
     {
       uint64 pa = PTE2PA(*pte);
