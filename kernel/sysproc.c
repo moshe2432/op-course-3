@@ -105,15 +105,29 @@ sys_map_shared_pages(void)
   argint(1, &size);
   argint(2, &dst_pid);
 
-  for (p = proc; p < &proc[NPROC]; p++)
+  dst_proc = procbyid(dst_pid);
+
+  if (src_va >= MAXVA)
   {
-    if ()
+    printf("sys_map_shated_pages src_va >= MAXVA");
+    return -1;
+  }
+  if (size <= 0)
+  {
+    printf("sys_map_shated_pages size <= 0");
+    return -1;
+  }
+  if (dst_proc == 0)
+  {
+    printf("sys_map_shated_pages dst_proc == 0");
+    return -1;
+  }
+  if (dst_proc->pid == src_proc->pid)
+  {
+    printf("sys_map_shated_pages dst_proc->pid == src_proc->pid");
+    return -1;
   }
 
-  if (src_va >= MAXVA || size <= 0 || dst_proc == 0 || dst_proc->pid == src_proc->pid)
-  {
-    return -1; // Invalid arguments
-  }
   return map_shared_pages(src_proc, dst_proc, src_va, size);
 }
 

@@ -150,27 +150,41 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
 
   pte = walk(src_proc->pagetable, src_va, 0);
   if (pte == 0)
+  {
+    printf("pte == 0");
     return 0;
+  }
   if ((*pte & PTE_V) == 0)
+  {
+    printf("(*pte & PTE_V) == 0");
     return 0;
+  }
   if ((*pte & PTE_U) == 0)
+  {
+    printf("(*pte & PTE_U) == 0");
     return 0;
+  }
 
   pa = PTE2PA(*pte);
   if (!pa)
+  {
+    printf("!pa");
     return 0;
+  }
 
   old_va = dst_proc->sz;
   dst_va = PGROUNDUP(old_va);
 
   if (mappages(dst_proc->pagetable, dst_va, size, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
   {
+    printf("error with mappages");
     return 0;
   }
 
   extra_sz = dst_va - old_va + size;
   dst_proc->sz = dst_proc->sz + extra_sz;
 
+  printf("map_shared_pages dst_va = %d", dst_va);
   return dst_va;
 }
 
@@ -243,8 +257,8 @@ void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
   {
     if ((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
-    if ((*pte & PTE_S) != 0)
-      panic("uvmunmap: not owned");
+    // if ((*pte & PTE_S) != 0)
+    //   panic("uvmunmap: not owned");
     if (PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
 
