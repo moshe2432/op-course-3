@@ -4,45 +4,45 @@
 
 int main(int argc, char *argv[])
 {
+    char buf[32] = "parent original";
     int parent_pid = getpid();
     int pid = fork();
-    uint64 result_p = 0;
+    uint64 shared_va = 0;
+
     if (pid == 0)
     {
         // child
-        char *test = "test";
-        printf("child sharing\n");
-        result_p = map_shared_pages(test, strlen(test), parent_pid);
-        printf("result_p str in child = %s\n", result_p);
-        sleep(10);
-        printf("result_p in child = %d\n", result_p);
+        sleep(1); // wait for parent to map
+        printf("child: mapping shared\n");
+        shared_va = map_shared_pages(buf, sizeof(buf), parent_pid);
+        if (shared_va == 0)
+        {
+            printf("child: map_shared_pages failed\n");
+            exit(1);
+        }
+        printf("child: writing to shared memory\n");
+        printf("child: shared_va = %d\n", shared_va);
+        printf("child: buf = %d\n", buf);
+        strcpy((char *)shared_va, "Hello daddys");
+        printf("child: wrote '%s'\n", (char *)shared_va);
+        printf("child: buf is: %s\n", buf);
+        // unmap_shared_pages((void *)shared_va, sizeof(buf));
+        // printf("child: unmap_shared_pages done\n");
         exit(0);
     }
-    if (pid < 0)
-    {
-        // error
-    }
-    else
+    else if (pid > 0)
     {
         // parent
-        // printf("parent waiting\n");
-        sleep(1);
-        printf("parent finished waiting\n");
-    }
-    printf("result_p in parent = %d\n", result_p);
-    int PGSIZE = 4096; // bytes per page
-    uint64 pointer = (((getsz())) & ~(PGSIZE - 1));
-    printf("pointer in parent = %d\n", pointer);
-    if (pointer > 0)
-    {
-        char *str = (char *)pointer;
-        printf("result = %s\n", *str);
-        unmap_shared_pages((void *)pointer, (int)strlen(str));
+        printf("parent: waiting for child\n");
+
+        wait(0);
+        printf("parent: child done, buf = '%s'\n", buf);
+        // Optionally unmap
     }
     else
     {
-        printf("error sharing mapped pages\n");
+        printf("fork failed\n");
+        exit(1);
     }
-
     exit(0);
 }

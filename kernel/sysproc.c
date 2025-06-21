@@ -102,16 +102,16 @@ sys_uptime(void)
 uint64
 sys_map_shared_pages(void)
 {
-  struct proc *src_proc = myproc();
-  struct proc *dst_proc;
-  int dst_pid;
+  struct proc *src_proc;
+  struct proc *dst_proc = myproc();
+  int src_pid;
   uint64 src_va;
   int size;
   argaddr(0, &src_va);
   argint(1, &size);
-  argint(2, &dst_pid);
+  argint(2, &src_pid);
 
-  dst_proc = procbyid(dst_pid);
+  src_proc = procbyid(src_pid);
 
   if (src_va >= MAXVA)
   {
@@ -123,7 +123,7 @@ sys_map_shared_pages(void)
     printf("sys_map_shated_pages size <= 0");
     return -1;
   }
-  if (dst_proc == 0)
+  if (src_proc == 0)
   {
     printf("sys_map_shated_pages dst_proc == 0");
     return -1;

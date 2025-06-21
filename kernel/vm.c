@@ -145,47 +145,66 @@ void kvmmap(pagetable_t kpgtbl, uint64 va, uint64 pa, uint64 sz, int perm)
 uint64
 map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, uint64 size)
 {
-  uint64 pa, dst_va, old_va, extra_sz;
-  pte_t *pte;
+  uint64 start = PGROUNDDOWN(src_va);
+  uint64 end = PGROUNDUP(src_va + size);
+  uint64 old_va = dst_proc->sz;
+  uint64 dst_va = PGROUNDUP(old_va);
+  uint64 map_size = end - start;
 
-  pte = walk(src_proc->pagetable, src_va, 0);
-  if (pte == 0)
+  for (uint64 off = 0; off < map_size; off += PGSIZE)
   {
-    panic("pte == 0\n");
-    return 0;
-  }
-  if ((*pte & PTE_V) == 0)
-  {
-    panic("(*pte & PTE_V) == 0\n");
-    return 0;
-  }
-  if ((*pte & PTE_U) == 0)
-  {
-    panic("(*pte & PTE_U) == 0\n");
-    return 0;
+    pte_t *pte = walk(src_proc->pagetable, start + off, 0);
+    if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
+      return 0;
+    uint64 pa = PTE2PA(*pte);
+    if (mappages(dst_proc->pagetable, dst_va + off, PGSIZE, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
+      return 0;
   }
 
-  pa = PTE2PA(*pte);
-  if (!pa)
-  {
-    panic("!pa\n");
-    return 0;
-  }
+  dst_proc->sz = dst_va + map_size;
+  return dst_va + (src_va - start); // return VA that matches src_va offset
 
-  old_va = dst_proc->sz;
-  dst_va = PGROUNDUP(old_va);
+  // uint64 pa, dst_va, old_va, extra_sz;
+  // pte_t *pte;
 
-  if (mappages(dst_proc->pagetable, dst_va, size, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
-  {
-    panic("error with mappages\n");
-    return 0;
-  }
+  // pte = walk(src_proc->pagetable, src_va, 0);
+  // if (pte == 0)
+  // {
+  //   panic("pte == 0\n");
+  //   return 0;
+  // }
+  // if ((*pte & PTE_V) == 0)
+  // {
+  //   panic("(*pte & PTE_V) == 0\n");
+  //   return 0;
+  // }
+  // if ((*pte & PTE_U) == 0)
+  // {
+  //   panic("(*pte & PTE_U) == 0\n");
+  //   return 0;
+  // }
 
-  extra_sz = dst_va - old_va + size;
-  dst_proc->sz = dst_proc->sz + extra_sz;
+  // pa = PTE2PA(*pte);
+  // if (!pa)
+  // {
+  //   panic("!pa\n");
+  //   return 0;
+  // }
 
-  printf("map_shared_pages dst_va = %d\n", dst_va);
-  return dst_va;
+  // old_va = dst_proc->sz;
+  // dst_va = PGROUNDUP(old_va);
+
+  // if (mappages(dst_proc->pagetable, dst_va, size, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
+  // {
+  //   panic("error with mappages\n");
+  //   return 0;
+  // }
+
+  // extra_sz = dst_va - old_va + size;
+  // dst_proc->sz = dst_proc->sz + extra_sz;
+
+  // // printf("map_shared_pages dst_va = %d\n", dst_va);
+  // return dst_va;
 }
 
 // unmap the shared memory from the destination process
@@ -202,13 +221,13 @@ unmap_shared_pages(struct proc *p, uint64 addr, uint64 size)
 
   uint64 npages;
   int do_free;
-
-  size = PGROUNDUP(size);
-  npages = size / PGSIZE;
+  uint64 pageS = PGROUNDDOWN(addr);
+  uint64 pageE = PGROUNDUP(addr + size);
+  npages = (pageE - pageS) / PGSIZE;
 
   do_free = 1; // not sure if need to check something or not...
 
-  uvmunmap(p->pagetable, addr, npages, do_free);
+  uvmunmap(p->pagetable, pageS, npages, do_free);
 
   return 0;
 }
@@ -262,9 +281,9 @@ void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     if (PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
 
-    do_free = do_free & ((*pte & PTE_S) != 0);
+    // do_free = do_free & ((*pte & PTE_S) != 0);
 
-    if (do_free)
+    if (do_free && !(*pte & PTE_S))
     {
       uint64 pa = PTE2PA(*pte);
       kfree((void *)pa);
