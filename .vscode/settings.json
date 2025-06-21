@@ -4,6 +4,7 @@
         "riscv.h": "c",
         "defs.h": "c",
         "proc.h": "c",
-        "fs.h": "c"
+        "fs.h": "c",
+        "user.h": "c"
     },
 }

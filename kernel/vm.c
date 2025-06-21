@@ -151,24 +151,24 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
   pte = walk(src_proc->pagetable, src_va, 0);
   if (pte == 0)
   {
-    printf("pte == 0");
+    panic("pte == 0\n");
     return 0;
   }
   if ((*pte & PTE_V) == 0)
   {
-    printf("(*pte & PTE_V) == 0");
+    panic("(*pte & PTE_V) == 0\n");
     return 0;
   }
   if ((*pte & PTE_U) == 0)
   {
-    printf("(*pte & PTE_U) == 0");
+    panic("(*pte & PTE_U) == 0\n");
     return 0;
   }
 
   pa = PTE2PA(*pte);
   if (!pa)
   {
-    printf("!pa");
+    panic("!pa\n");
     return 0;
   }
 
@@ -177,14 +177,14 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
 
   if (mappages(dst_proc->pagetable, dst_va, size, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
   {
-    printf("error with mappages");
+    panic("error with mappages\n");
     return 0;
   }
 
   extra_sz = dst_va - old_va + size;
   dst_proc->sz = dst_proc->sz + extra_sz;
 
-  printf("map_shared_pages dst_va = %d", dst_va);
+  printf("map_shared_pages dst_va = %d\n", dst_va);
   return dst_va;
 }
 

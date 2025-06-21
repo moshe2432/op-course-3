@@ -100,6 +100,7 @@ extern uint64 sys_close(void);
 // Added prototypes for shared memory management system calls
 extern uint64 sys_map_shared_pages(void);
 extern uint64 sys_unmap_shared_pages(void);
+extern uint64 sys_getsz(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -128,6 +129,7 @@ static uint64 (*syscalls[])(void) = {
     // Added system calls for shared memory management
     [SYS_map_shared_pages] sys_map_shared_pages,
     [SYS_unmap_shared_pages] sys_unmap_shared_pages,
+    [SYS_getsz] sys_getsz,
 
 };
 

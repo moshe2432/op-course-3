@@ -25,6 +25,7 @@ int uptime(void);
 // System calls for shared memory management
 int map_shared_pages(void *src_va, int size, int dest_pid);
 int unmap_shared_pages(void *dst_va, int size);
+int getsz(void);
 
 // ulib.c
 int stat(const char *, struct stat *);

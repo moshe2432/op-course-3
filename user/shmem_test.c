@@ -10,9 +10,10 @@ int main(int argc, char *argv[])
     if (pid == 0)
     {
         // child
-        char *test = "test\n";
+        char *test = "test";
         printf("child sharing\n");
-        result_p = map_shared_pages(test, sizeof(test), parent_pid);
+        result_p = map_shared_pages(test, strlen(test), parent_pid);
+        printf("result_p str in child = %s\n", result_p);
         sleep(10);
         printf("result_p in child = %d\n", result_p);
         exit(0);
@@ -28,18 +29,20 @@ int main(int argc, char *argv[])
         sleep(1);
         printf("parent finished waiting\n");
     }
-    printf("result_p in parent = %s\n", result_p);
-
-    if (result_p > 0)
+    printf("result_p in parent = %d\n", result_p);
+    int PGSIZE = 4096; // bytes per page
+    uint64 pointer = (((getsz())) & ~(PGSIZE - 1));
+    printf("pointer in parent = %d\n", pointer);
+    if (pointer > 0)
     {
-        char *str = (char *)result_p;
-        printf(str);
-        unmap_shared_pages((void *)result_p, (int)strlen(str));
+        char *str = (char *)pointer;
+        printf("result = %s\n", *str);
+        unmap_shared_pages((void *)pointer, (int)strlen(str));
     }
     else
     {
         printf("error sharing mapped pages\n");
     }
-    
+
     exit(0);
 }

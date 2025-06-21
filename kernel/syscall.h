@@ -23,3 +23,4 @@
 // System call numbers for shared memory management
 #define SYS_map_shared_pages 22
 #define SYS_unmap_shared_pages 23
+#define SYS_getsz 24
