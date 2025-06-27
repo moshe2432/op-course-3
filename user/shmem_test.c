@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
         strcpy((char *)shared_va, "Hello daddys");
         printf("child: wrote '%s'\n", (char *)shared_va);
         printf("child: buf is: %s\n", buf);
-        // unmap_shared_pages((void *)shared_va, sizeof(buf));
-        // printf("child: unmap_shared_pages done\n");
+        unmap_shared_pages((void *)shared_va, sizeof(buf));
+        printf("child: unmap_shared_pages done\n");
         exit(0);
     }
     else if (pid > 0)

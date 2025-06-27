@@ -163,48 +163,6 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
 
   dst_proc->sz = dst_va + map_size;
   return dst_va + (src_va - start); // return VA that matches src_va offset
-
-  // uint64 pa, dst_va, old_va, extra_sz;
-  // pte_t *pte;
-
-  // pte = walk(src_proc->pagetable, src_va, 0);
-  // if (pte == 0)
-  // {
-  //   panic("pte == 0\n");
-  //   return 0;
-  // }
-  // if ((*pte & PTE_V) == 0)
-  // {
-  //   panic("(*pte & PTE_V) == 0\n");
-  //   return 0;
-  // }
-  // if ((*pte & PTE_U) == 0)
-  // {
-  //   panic("(*pte & PTE_U) == 0\n");
-  //   return 0;
-  // }
-
-  // pa = PTE2PA(*pte);
-  // if (!pa)
-  // {
-  //   panic("!pa\n");
-  //   return 0;
-  // }
-
-  // old_va = dst_proc->sz;
-  // dst_va = PGROUNDUP(old_va);
-
-  // if (mappages(dst_proc->pagetable, dst_va, size, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
-  // {
-  //   panic("error with mappages\n");
-  //   return 0;
-  // }
-
-  // extra_sz = dst_va - old_va + size;
-  // dst_proc->sz = dst_proc->sz + extra_sz;
-
-  // // printf("map_shared_pages dst_va = %d\n", dst_va);
-  // return dst_va;
 }
 
 // unmap the shared memory from the destination process
@@ -219,17 +177,27 @@ uint64
 unmap_shared_pages(struct proc *p, uint64 addr, uint64 size)
 {
 
-  uint64 npages;
-  int do_free;
   uint64 pageS = PGROUNDDOWN(addr);
   uint64 pageE = PGROUNDUP(addr + size);
-  npages = (pageE - pageS) / PGSIZE;
+  uint64 npages = (pageE - pageS) / PGSIZE;
 
-  do_free = 1; // not sure if need to check something or not...
+  // Only unmap if all pages are shared
+  for (uint64 a = pageS; a < pageE; a += PGSIZE)
+  {
+    pte_t *pte = walk(p->pagetable, a, 0);
+    if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_S) == 0)
+      return -1; // not a shared mapping
+  }
 
-  uvmunmap(p->pagetable, pageS, npages, do_free);
+  // Do not free physical memory for shared pages
+  uvmunmap(p->pagetable, pageS, npages, 0);
 
-  return 0;
+  // Optionally shrink sz if unmapping from the top
+  if (pageE == PGROUNDUP(p->sz))
+  {
+    p->sz = pageS;
+  }
+  return 0; // success
 }
 
 // Create PTEs for virtual addresses starting at va that refer to
