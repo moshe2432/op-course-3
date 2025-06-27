@@ -21,11 +21,9 @@ int main(int argc, char *argv[])
             exit(1);
         }
         printf("child: writing to shared memory\n");
-        printf("child: shared_va = %d\n", shared_va);
-        printf("child: buf = %d\n", buf);
+
         strcpy((char *)shared_va, "Hello daddys");
-        printf("child: wrote '%s'\n", (char *)shared_va);
-        printf("child: buf is: %s\n", buf);
+
         unmap_shared_pages((void *)shared_va, sizeof(buf));
         printf("child: unmap_shared_pages done\n");
         exit(0);
