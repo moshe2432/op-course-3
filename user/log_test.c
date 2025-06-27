@@ -91,8 +91,17 @@ int main(int argc, char *argv[])
                 printf("sss offset = %d\n", offset);
             }
 
+            printf("before writing:\n\n");
+            uint32 *words = (uint32 *)shared_va;
+            for (int i = 0; i < 4096 / 4; i++)
+            {
+                if (words[i] != 0)
+                    printf("words[%d] = %x\n", i, words[i]);
+            }
+            printf("\n\n");
+
             printf("child number %d writing %s in offset = %d to %p\n", i, to_write, offset, (shared_va + offset));
-            strcpy((char *)(shared_va + offset), to_write);
+            strcpy((char *)(shared_va + offset + sizeof(uint32)), to_write);
             // todo unmap_shared_pages
             exit(0);
         }
@@ -125,8 +134,8 @@ int main(int argc, char *argv[])
     printf("what is in the buffer? in pointer %p\n", &buffer);
     for (int i = 0; i < 4096; i++)
     {
-        if (buffer[i] == 0)
-            continue;
+        // if (buffer[i] == 0)
+        //     continue;
         printf("%c", buffer[i]);
     }
     printf("\n");
