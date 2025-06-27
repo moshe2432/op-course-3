@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         // child
         sleep(1); // wait for parent to map
         printf("child: mapping shared\n");
-        shared_va = map_shared_pages(buf, sizeof(buf), parent_pid);
+        // shared_va = map_shared_pages(buf, sizeof(buf), parent_pid);
         if (shared_va == 0)
         {
             printf("child: map_shared_pages failed\n");

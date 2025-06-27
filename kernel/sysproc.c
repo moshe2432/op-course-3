@@ -103,15 +103,17 @@ uint64
 sys_map_shared_pages(void)
 {
   struct proc *src_proc;
-  struct proc *dst_proc = myproc();
-  int src_pid;
+  struct proc *dst_proc;
+  int src_pid, dst_pid;
   uint64 src_va;
   int size;
   argaddr(0, &src_va);
   argint(1, &size);
   argint(2, &src_pid);
+  argint(3, &dst_pid);
 
   src_proc = procbyid(src_pid);
+  dst_proc = procbyid(dst_pid);
 
   if (src_va >= MAXVA)
   {
