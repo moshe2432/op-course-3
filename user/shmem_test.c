@@ -6,22 +6,25 @@ int main(int argc, char *argv[])
 {
     char buf[32] = "parent original";
     int parent_pid = getpid();
-    int pid = fork();
-    uint64 shared_va = 0;
 
+    uint64 shared_va = 0;
+    int p[2];
+    pipe(p);
+    int pid = fork();
     if (pid == 0)
     {
         // child
-        sleep(1); // wait for parent to map
-        printf("child: mapping shared\n");
-        // shared_va = map_shared_pages(buf, sizeof(buf), parent_pid);
+        sleep(3); // Ensure parent runs first
+        close(p[1]);
+        read(p[0], &shared_va, sizeof(shared_va));
+        printf("child: read shared_va = %p\n", (void *)shared_va);
+        close(p[0]);
         if (shared_va == 0)
         {
             printf("child: map_shared_pages failed\n");
             exit(1);
         }
         printf("child: writing to shared memory\n");
-
         strcpy((char *)shared_va, "Hello daddys");
 
         unmap_shared_pages((void *)shared_va, sizeof(buf));
@@ -31,8 +34,13 @@ int main(int argc, char *argv[])
     else if (pid > 0)
     {
         // parent
+        close(p[0]);
+        printf("parent: mapping shared\n");
+        shared_va = map_shared_pages(buf, sizeof(buf), parent_pid, pid);
+        printf("parent: shared_va = %p\n", (void *)shared_va);
+        write(p[1], &shared_va, sizeof(shared_va));
+        close(p[1]);
         printf("parent: waiting for child\n");
-
         wait(0);
         printf("parent: child done, buf = '%s'\n", buf);
         // Optionally unmap
