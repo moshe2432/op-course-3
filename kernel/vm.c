@@ -145,6 +145,7 @@ void kvmmap(pagetable_t kpgtbl, uint64 va, uint64 pa, uint64 sz, int perm)
 uint64
 map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, uint64 size)
 {
+  printf("map shared pages");
   uint64 start = PGROUNDDOWN(src_va);
   uint64 end = PGROUNDUP(src_va + size);
   uint64 old_va = dst_proc->sz;
@@ -155,10 +156,10 @@ map_shared_pages(struct proc *src_proc, struct proc *dst_proc, uint64 src_va, ui
   {
     pte_t *pte = walk(src_proc->pagetable, start + off, 0);
     if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
-      return 0;
+      panic("walk");
     uint64 pa = PTE2PA(*pte);
     if (mappages(dst_proc->pagetable, dst_va + off, PGSIZE, pa, PTE_R | PTE_S | PTE_U | PTE_X | PTE_W) != 0)
-      return 0;
+      panic("mappages");
   }
 
   dst_proc->sz = dst_va + map_size;

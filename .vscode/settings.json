@@ -5,6 +5,8 @@
         "defs.h": "c",
         "proc.h": "c",
         "fs.h": "c",
-        "user.h": "c"
+        "user.h": "c",
+        "cstdio": "c",
+        "string.h": "c"
     },
 }

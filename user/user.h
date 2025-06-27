@@ -23,7 +23,7 @@ char *sbrk(int);
 int sleep(int);
 int uptime(void);
 // System calls for shared memory management
-int map_shared_pages(void *src_va, int size, int src_pid, int dest_pid);
+uint64 map_shared_pages(void *src_va, int size, int src_pid, int dest_pid);
 int unmap_shared_pages(void *dst_va, int size);
 int getsz(void);
 
