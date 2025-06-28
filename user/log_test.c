@@ -2,7 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-// #define PGSIZE 4096 // bytes per page
+#define PGSIZE 4096 // bytes per page
 
 char *strcat(char *dest, const char *src)
 {
@@ -42,7 +42,7 @@ void itoa(int num, char *buf)
 int main(int argc, char *argv[])
 {
     printf("main\n");
-    char *buffer = malloc(4096); // get heap memory
+    char *buffer = malloc(PGSIZE); // get heap memory
 
     int parent_pid = getpid();
 
@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
             uint32 *header_ptr = (uint32 *)((char *)shared_va + offset);
             uint32 value = __sync_val_compare_and_swap(header_ptr, 0, new_value);
 
-            while (offset < 4096)
+            while (offset < PGSIZE)
             {
                 if (value == 0)
                 {
                     printf("before writing:\n\n");
                     uint32 *words = (uint32 *)shared_va;
-                    for (int i = 0; i < 4096 / 4; i++)
+                    for (int i = 0; i < PGSIZE / 4; i++)
                     {
                         if (words[i] != 0)
                             printf("words[%d] = %x\n", i, words[i]);
@@ -151,10 +151,20 @@ int main(int argc, char *argv[])
     }
 
     printf("what is in the buffer? in pointer %p\n", &buffer);
-    for (int i = 0; i < 4096; i++)
+    int header_size = 0;
+    for (int i = 0; i < PGSIZE; i++)
     {
-        // if (buffer[i] == 0)
-        //     continue;
+        if (buffer[i] == 0)
+        {
+            header_size++;
+            continue;
+        }
+
+        if (header_size > 0)
+        {
+            printf("(%d)", header_size);
+            header_size = 0;
+        }
         printf("%c", buffer[i]);
     }
     printf("\n");
