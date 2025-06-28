@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
             // child
             sleep(3);           // Ensure parent runs first
             close(pipes[i][1]); // close write end
-            uint64 shared_va = 0;
-            read(pipes[i][0], (void *)&shared_va, sizeof(uint64));
-            printf("child: read shared_va = %p\n", (void *)shared_va);
+            void *shared_va;
+            read(pipes[i][0], &shared_va, sizeof(uint64));
+            printf("child: read shared_va = %p\n", shared_va);
             close(pipes[i][0]);
             if (shared_va == 0)
             {
@@ -81,27 +81,46 @@ int main(int argc, char *argv[])
             char index_str[16];
             itoa(i, index_str);
             strcat(to_write, index_str);
-            int offset = 0;
-            while (__sync_val_compare_and_swap((uint32 *)(shared_va + offset), 0, ((uint32)i << 16 | 100)) != 0)
+            uint64 offset = 0;
+
+            uint32 new_value = ((uint32)i << 16 | (uint32)(strlen(to_write) + 1));
+            printf("size of new text to write = %d\n", strlen(to_write));
+            uint32 *header_ptr = (uint32 *)((char *)shared_va + offset);
+            uint32 value = __sync_val_compare_and_swap(header_ptr, 0, new_value);
+
+            while (offset < 4096)
             {
-                if (offset > 4096)
+                if (value == 0)
+                {
+                    printf("before writing:\n\n");
+                    uint32 *words = (uint32 *)shared_va;
+                    for (int i = 0; i < 4096 / 4; i++)
+                    {
+                        if (words[i] != 0)
+                            printf("words[%d] = %x\n", i, words[i]);
+                    }
+                    printf("\n\n");
+
+                    printf("child number %d writing %s in offset = %d to %p\n", i, to_write, offset, (shared_va + offset));
+                    strcpy((char *)(shared_va + offset + sizeof(uint32)), to_write);
                     break;
-                offset += 100;
+                }
+                printf("this part is occupied by pid index = %d\n", (uint16)(value >> 16));
+                printf("offset in this part = %d\n", (uint16)(value & 0xFFFF));
+                uint64 part_length = (uint64)(value & 0xFFFF);
+                uint64 header_length = (uint64)sizeof(uint32);
+                offset += header_length;
+                printf("new offset = %d\n", offset);
+                offset += part_length;
+                printf("new offset2 = %d\n", offset);
+                // offset += 1;
+                offset = (offset + 3) & ~3;
+                printf("new offset3 = %d\n", offset);
+                uint64 *addr = (uint64 *)(shared_va + offset);
                 // offset += *(shared_va + offset)
-                printf("sss offset = %d\n", offset);
+                value = __sync_val_compare_and_swap(addr, 0, new_value);
             }
 
-            printf("before writing:\n\n");
-            uint32 *words = (uint32 *)shared_va;
-            for (int i = 0; i < 4096 / 4; i++)
-            {
-                if (words[i] != 0)
-                    printf("words[%d] = %x\n", i, words[i]);
-            }
-            printf("\n\n");
-
-            printf("child number %d writing %s in offset = %d to %p\n", i, to_write, offset, (shared_va + offset));
-            strcpy((char *)(shared_va + offset + sizeof(uint32)), to_write);
             // todo unmap_shared_pages
             exit(0);
         }
