@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
             // printf("parent: shared_va = %p\n", (void *)shared_va);
             write(pipes[i][1], (void *)&shared_va, sizeof(uint64));
             close(pipes[i][1]);
-            wait(0);
+            // wait(0);
         }
         else
         {
