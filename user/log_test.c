@@ -92,32 +92,18 @@ int main(int argc, char *argv[])
             {
                 if (value == 0)
                 {
-                    printf("before writing:\n\n");
-                    uint32 *words = (uint32 *)shared_va;
-                    for (int i = 0; i < PGSIZE / 4; i++)
-                    {
-                        if (words[i] != 0)
-                            printf("words[%d] = %x\n", i, words[i]);
-                    }
-                    printf("\n\n");
 
-                    printf("child number %d writing %s in offset = %d to %p\n", i, to_write, offset, (shared_va + offset));
                     strcpy((char *)(shared_va + offset + sizeof(uint32)), to_write);
                     break;
                 }
-                printf("this part is occupied by pid index = %d\n", (uint16)(value >> 16));
-                printf("offset in this part = %d\n", (uint16)(value & 0xFFFF));
                 uint64 msg_length = (uint64)(value & 0xFFFF);
                 uint64 header_length = (uint64)sizeof(uint32);
                 offset += header_length;
-                printf("new offset = %d\n", offset);
                 offset += msg_length;
-                printf("new offset2 = %d\n", offset);
-                // offset += 1;
+
                 offset = (offset + 3) & ~3;
-                printf("new offset3 = %d\n", offset);
                 uint64 *addr = (uint64 *)(shared_va + offset);
-                // offset += *(shared_va + offset)
+
                 value = __sync_val_compare_and_swap(addr, 0, new_header);
             }
 
@@ -126,7 +112,7 @@ int main(int argc, char *argv[])
         }
         else if (pid > 0)
         {
-            printf("fork pid = %d\n", pid);
+            // printf("fork pid = %d\n", pid);
             // parent
             close(pipes[i][0]); // close read end
             // printf("parent: mapping shared\n %d, %d, \n", sizeof(buffer), parent_pid);
@@ -152,28 +138,33 @@ int main(int argc, char *argv[])
 
     printf("what is in the buffer? in pointer %p\n", &buffer);
     int offset = 0;
-    char *header = malloc(32);
+    char header[32];
+    char zero_header[32] = {0};
     while (offset < PGSIZE)
     {
-
         for (int i = 0; i < 32; i++)
         {
-
-            header[i] = buffer[offset];
-            offset++;
+            header[i] = buffer[i + offset];
         }
 
-        printf("this part is occupied by pid index = %d\n", (uint16)(*header >> 16));
-        printf("offset in this part = %d\n", (uint16)(*header & 0xFFFF));
-        uint64 part_length = (uint64)(*header & 0xFFFF);
-        uint64 header_length = (uint64)sizeof(uint32);
-        printf("this part is occupied by pid index = %d\n", part_length);
-        printf("offset in this part = %d\n", header_length);
-
-        for (int i = 0; i < (int)header_length; i++)
+        if (memcmp(header, zero_header, 32) == 0)
         {
-            offset++;
+            // printf("Header is all zeros");
+            continue; // or continue, depending on your logic
         }
+
+        uint32 header_value = *(uint32 *)header;
+        printf("(%d) ", (uint16)(header_value >> 16));
+        uint64 msg_length = (uint64)(header_value & 0xFFFF);
+        // printf("msg_length in this part = %d\n", msg_length);
+
+        for (int i = 0; i < msg_length; i++)
+        {
+            printf("%c", buffer[i + offset + sizeof(uint32)]);
+        }
+
+        offset += sizeof(uint32) + msg_length;
+        offset = (offset + 3) & ~3;
     }
 
     // int header_size = 0;
