@@ -41,18 +41,18 @@ void itoa(int num, char *buf)
 
 int main(int argc, char *argv[])
 {
-    printf("main\n");
     char *buffer = malloc(PGSIZE); // get heap memory
 
     int parent_pid = getpid();
 
     printf("piping, parent pid = %d, original pointer = %p\n", parent_pid, &buffer);
-    int num_child = 4;
+    int num_child = 16;
     int (*pipes)[2] = malloc(num_child * sizeof(int[2]));
     for (int i = 0; i < num_child; i++)
     {
         if (pipe(pipes[i]) == -1)
         {
+            printf("error with pipe number %d\n", i);
             exit(1);
         }
     }
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         if (pid == 0)
         {
             // child
-            sleep(3);           // Ensure parent runs first
+            // sleep(3);           // Ensure parent runs first
             close(pipes[i][1]); // close write end
             void *shared_va;
             read(pipes[i][0], &shared_va, sizeof(uint64));
@@ -149,8 +149,7 @@ int main(int argc, char *argv[])
 
         if (memcmp(header, zero_header, 32) == 0)
         {
-            // printf("Header is all zeros");
-            continue; // or continue, depending on your logic
+            continue;
         }
 
         uint32 header_value = *(uint32 *)header;
@@ -162,6 +161,7 @@ int main(int argc, char *argv[])
         {
             printf("%c", buffer[i + offset + sizeof(uint32)]);
         }
+        printf("\n");
 
         offset += sizeof(uint32) + msg_length;
         offset = (offset + 3) & ~3;
